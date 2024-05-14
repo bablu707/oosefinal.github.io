@@ -2,7 +2,7 @@ const express=require('express');
 const path= require("path");
 const bcrypt=require("bcrypt");
 const collection=require("./config")
-//const credit = require('./creditcontroller');
+const deviceColl = require('./creditcontroller');
 
 const app=express();
 
@@ -96,6 +96,45 @@ app.post("/login",async(req,res)=>{
             res.redirect("/home");
         }}
   
+});
+
+
+
+//For credit System
+
+
+app.get("/credits",async(req,res)=>{
+    try {
+        // Fetch all device types from the database
+        const devices = await deviceColl.find().distinct('DeviceType');
+        console.log(devices);
+        const deviceData = {};
+        for (const deviceType of devices) {
+            const brands = await deviceColl.find({ DeviceType: deviceType }).distinct('brand');
+            deviceData[deviceType] = brands;
+            
+            
+        }
+       console.log(deviceData)
+        res.render('credits', { deviceData });
+    } catch (error) {
+        console.error('Error fetching device types:', error);
+        res.status(500).send('Internal Server Error');
+    }
+})
+
+app.post('/calculate', async (req, res) => {
+    try {
+        const { deviceType, deviceBrand } = req.body;
+        // Retrieve the data from the database based on deviceType and deviceBrand
+        const data = await deviceColl.findOne({ DeviceType: deviceType, brand: deviceBrand });
+        // Send the retrieved data back to the client
+        console.log(data)
+        res.json(data);
+    } catch (error) {
+        console.error('Error calculating credits:', error);
+        res.status(500).send('Internal Server Error');
+    }
 });
 
 
